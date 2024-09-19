@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 
 def get_overpass_url(lat, lon):
-  base_url = "https://overpass.kumi.systems/api/interpreter"
+  base_url = "https://overpass.private.coffee/api/interpreter"
   query = f"[timeout:10][out:json];is_in({lat},{lon})->.a;way(pivot.a);out%20tags;relation(pivot.a);out%20tags;"
   return f"{base_url}?data={query}"
 
@@ -13,15 +13,23 @@ def get_overpass_url(lat, lon):
 def process_data(data, lang):
   proc_data = {
     "country": "",
+    "country_code": "",
     "state": "",
     "city": "",
-    "suburb": ""
+    "suburb": "",
   }
 
   for i in data:
     if "tags" in i and "admin_level" in i["tags"] and "boundary" in i["tags"] and i["tags"][
       "boundary"] == "administrative":
-      # admin level 10: suburb
+      # admin level 9 and 10: suburb
+      # in case of both, 10 takes priority
+      if i["tags"]["admin_level"] == "9":
+        if "name:" + lang in i["tags"]:
+          proc_data["suburb"] = i["tags"]["name:" + lang]
+        else:
+          proc_data["suburb"] = i["tags"]["name"]
+
       if i["tags"]["admin_level"] == "10":
         if "name:" + lang in i["tags"]:
           proc_data["suburb"] = i["tags"]["name:" + lang]
@@ -48,6 +56,8 @@ def process_data(data, lang):
           proc_data["country"] = i["tags"]["name:" + lang]
         else:
           proc_data["country"] = i["tags"]["name"]
+        if "ISO3166-1" in i["tags"]:
+          proc_data["country_code"] = i["tags"]["ISO3166-1"]
 
   return proc_data
 
