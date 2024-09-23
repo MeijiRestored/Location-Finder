@@ -4,6 +4,9 @@ from flask import Flask, jsonify
 app = Flask(__name__)
 
 
+def get_flag_emoji(country_code):
+    return ''.join(chr(127397 + ord(char)) for char in country_code.upper())
+
 def get_overpass_url(lat, lon):
   base_url = "https://overpass.private.coffee/api/interpreter"
   query = f"[timeout:10][out:json];is_in({lat},{lon})->.a;way(pivot.a);out%20tags;relation(pivot.a);out%20tags;"
@@ -14,6 +17,7 @@ def process_data(data, lang):
   proc_data = {
     "country": "",
     "country_code": "",
+    "country_flag": "",
     "state": "",
     "city": "",
     "suburb": "",
@@ -58,6 +62,9 @@ def process_data(data, lang):
           proc_data["country"] = i["tags"]["name"]
         if "ISO3166-1" in i["tags"]:
           proc_data["country_code"] = i["tags"]["ISO3166-1"]
+          
+    if proc_data["country_code"] != "":
+        proc_data["country_flag"] = get_flag_emoji(proc_data["country_code"])
 
   return proc_data
 

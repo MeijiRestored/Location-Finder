@@ -14,6 +14,7 @@ A simple Flask app which returns the country/state/city/suburb name for given co
   "city": "Bruxelles",
   "country": "Belgique",
   "country_code": "BE",
+  "country_flag": "🇧🇪",
   "state": "Bruxelles-Capitale",
   "suburb": "Quartier Midi-Lemonnier"
 }
