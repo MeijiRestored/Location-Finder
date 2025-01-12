@@ -1,11 +1,28 @@
+import json
+
+import redis
 import requests
 from flask import Flask, jsonify
 
+from config import Config
+
 app = Flask(__name__)
+app.config.from_object(Config)
+
+if app.config["USE_REDIS"]:
+  redis_client = redis.StrictRedis(
+    host=app.config["REDIS_HOST"],
+    port=app.config["REDIS_PORT"],
+    db=app.config["REDIS_DB"],
+    decode_responses=True
+  )
+else:
+  redis_client = None
 
 
 def get_flag_emoji(country_code):
-    return ''.join(chr(127397 + ord(char)) for char in country_code.upper())
+  return ''.join(chr(127397 + ord(char)) for char in country_code.upper())
+
 
 def get_overpass_url(lat, lon):
   base_url = "https://overpass.private.coffee/api/interpreter"
@@ -62,22 +79,30 @@ def process_data(data, lang):
           proc_data["country"] = i["tags"]["name"]
         if "ISO3166-1" in i["tags"]:
           proc_data["country_code"] = i["tags"]["ISO3166-1"]
-          
+
     if proc_data["country_code"] != "":
-        proc_data["country_flag"] = get_flag_emoji(proc_data["country_code"])
+      proc_data["country_flag"] = get_flag_emoji(proc_data["country_code"])
 
   return proc_data
 
 
 def fetch_location_data(lat, lon, lang="unspecified"):
-  # unspecified above will just make the process_data look for name:unspecified which does not exist and hence always return local names
-  overpass_url = get_overpass_url(lat, lon)
+  cache_key = f"location:{lang}:{lat}:{lon}"
+  if app.config["USE_REDIS"] and redis_client:
+    cached_data = redis_client.get(cache_key)
+    if cached_data:
+      return jsonify(json.loads(cached_data))
 
+  overpass_url = get_overpass_url(lat, lon)
   try:
     response = requests.get(overpass_url)
     response.raise_for_status()
     data = response.json()
     proc_data = process_data(data["elements"], lang)
+
+    if app.config["USE_REDIS"] and redis_client:
+      redis_client.setex(cache_key, app.config["CACHE_EXPIRY_SECONDS"], json.dumps(proc_data))
+
     return jsonify(proc_data)
   except requests.exceptions.RequestException as e:
     return jsonify({"error": str(e)}), 500
@@ -94,4 +119,4 @@ def get_location_data(lat, lon):
 
 
 if __name__ == '__main__':
-  app.run(debug=True)
+  app.run(debug=app.config["DEBUG"])

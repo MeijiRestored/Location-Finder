@@ -22,6 +22,11 @@ A simple Flask app which returns the country/state/city/suburb name for given co
 - If no name was found (most often suburb), empty string is returned.
 - Country code is ISO3166-1.
 
+## Caching
+
+This app uses Redis to cache data and thus reduce the amount of Overpass requests.
+You can configure Redis or turn caching off in `config.py`.
+
 ## Credits
 - Data from [OpenStreetMap](https://osm.org)
 - Overpass instance used : [Private.coffee](https:///overpass.private.coffee)
