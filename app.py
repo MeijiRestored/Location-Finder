@@ -105,6 +105,8 @@ def fetch_location_data(lat, lon, lang="unspecified"):
 
     return jsonify(proc_data)
   except requests.exceptions.RequestException as e:
+    return jsonify({"error": str(e)}), 503
+  except Exception as e:
     return jsonify({"error": str(e)}), 500
 
 
