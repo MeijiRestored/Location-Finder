@@ -3,10 +3,19 @@
 A simple Flask app which returns the country/state/city/suburb name for given coordinates, using OpenStreetMap data.
 
 ## Endpoints
+
 - `/lat/lon` : Get local names
 - `/lang/lat/lon` : Get names for specified language. See https://wiki.openstreetmap.org/wiki/Names#Localization
 
-## Example request
+## Documentation
+
+Install required dependencies via `pip install -r requirements.txt`
+
+### Swagger
+
+Swagger API docs are available at `/apidocs/` when launching the app.
+
+### Example request
 
 `/fr/50.843388/4.349016`
 ```json
